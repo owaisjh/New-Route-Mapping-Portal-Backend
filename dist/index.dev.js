@@ -1,7 +1,5 @@
 "use strict";
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 var express = require('express');
 
 var bodyParser = require('body-parser');
@@ -11,6 +9,11 @@ var cors = require('cors');
 var _require = require('pg'),
     Client = _require.Client;
 
+var neo4j = require('neo4j-driver');
+
+var driver = neo4j.driver('bolt://localhost:7687', neo4j.auth.basic('neo4j', '12345678'));
+var session = driver.session();
+console.log('Neo4j connected');
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
@@ -75,7 +78,7 @@ app.post('/storeRoutes', function _callee2(req, res) {
           // function point (e) {
           //     return (e[0], e[1]);
           // }
-          console.log(req.body);
+          // console.log(req.body);
           route = req.body.route; // const temp = '{"(1,2)","(2,3)"}';
           // console.log(typeof(route));
 
@@ -89,7 +92,6 @@ app.post('/storeRoutes', function _callee2(req, res) {
             route_s = route_s + '"(' + element[0] + ',' + element[1] + ')",';
           });
           route_s = route_s.slice(0, route_s.length - 1) + '}';
-          console.log(_typeof(route_s));
           client.query(insert_query, [start_landmark, start_landmark_type, end_landmark, end_landmark_type, route_s], function (error) {
             if (error) {
               console.log(error);
@@ -98,9 +100,120 @@ app.post('/storeRoutes', function _callee2(req, res) {
             res.status(201).send("route added");
           });
 
-        case 12:
+        case 10:
         case "end":
           return _context2.stop();
+      }
+    }
+  });
+});
+app.post('/add_landmark', function _callee3(req, res) {
+  var l_name, l_type, village, l_latitude, l_longitude, result, singleRecord, node;
+  return regeneratorRuntime.async(function _callee3$(_context3) {
+    while (1) {
+      switch (_context3.prev = _context3.next) {
+        case 0:
+          l_name = req.body.landmark_name; // check if the landmark exists
+
+          l_type = req.body.landmark_type;
+          village = req.body.village;
+          l_latitude = req.body.latitude;
+          l_longitude = req.body.longitude;
+          console.log(l_name);
+          console.log(village);
+          _context3.next = 9;
+          return regeneratorRuntime.awrap(session.run('match (v:Village {name: $vi ,state:"Maharastra"}) create (l:Landmark {name: $l_n,type: $l_t,latitude:$l_lat,longitude:$l_long}) - [r:Located_in] -> (v) return l', {
+            vi: village,
+            l_n: l_name,
+            l_t: l_type,
+            l_lat: l_latitude,
+            l_long: l_longitude
+          }));
+
+        case 9:
+          result = _context3.sent;
+          singleRecord = result.records[0];
+          node = singleRecord.get(0);
+          console.log(node.properties.name);
+          _context3.next = 15;
+          return regeneratorRuntime.awrap(session.close());
+
+        case 15:
+          res.status(201).send("landmark added successfully");
+
+        case 16:
+        case "end":
+          return _context3.stop();
+      }
+    }
+  });
+});
+app.post('/add_route', function _callee4(req, res) {
+  var route_coordinates, landmark_1, landmark_2, village_1, village_2, landmark_1_type, landmark_2_type, coordinates, nodes, straight_line_distance, route_string;
+  return regeneratorRuntime.async(function _callee4$(_context4) {
+    while (1) {
+      switch (_context4.prev = _context4.next) {
+        case 0:
+          route_coordinates = req.body.route;
+          console.log(route_coordinates);
+          landmark_1 = req.body.start_landmark;
+          landmark_2 = req.body.end_landmark;
+          village_1 = req.body.startVillage;
+          village_2 = req.body.terminalVillage;
+          landmark_1_type = req.body.start_landmark_type;
+          landmark_2_type = req.body.end_landmark_type;
+          coordinates = eval(route_coordinates);
+          nodes = coordinates.length;
+          straight_line_distance = (route_coordinates[nodes - 1][0] - route_coordinates[0][0]) * (route_coordinates[nodes - 1][0] - route_coordinates[0][0]) + (route_coordinates[nodes - 1][1] - route_coordinates[0][1]) * (route_coordinates[nodes - 1][1] - route_coordinates[0][1]);
+          route_string = '[';
+          route_coordinates.forEach(function (e) {
+            route_string = route_string + '[' + e[0] + ',' + e[1] + '],';
+          });
+          route_string = route_string.slice(0, route_string.length - 1) + ']';
+          console.log(route_string);
+          console.log(route_coordinates[0][0]);
+          console.log(route_coordinates[coordinates.length - 1][0]);
+          console.log(nodes);
+          console.log(landmark_1);
+          console.log(landmark_2);
+          console.log(village_1);
+          console.log(landmark_1_type); // await session.run(
+          //     "MATCH (v:Village {name: $vi, state: 'Maharastra'}) MERGE (l:Landmark {name: $l_n,type: $l_t,village :$vi,latitude: $l_lat,longitude: $l_long}) MERGE (l) - [r:Located_in] -> (v)",
+          //     { 
+          //         vi: village_1,
+          //         l_n : landmark_1,
+          //         l_t : landmark_1_type,
+          //         l_lat : coordinates[0][0],
+          //         l_long : coordinates[0][1]
+          //     }
+          // );
+          // await session.run(
+          //     "MATCH (v:Village {name: $vi, state: 'Maharastra'}) MERGE (l:Landmark {name: $l_n,type: $l_t,village :$vi,latitude: $l_lat,longitude: $l_long}) MERGE (l) - [r:Located_in] -> (v)",
+          //     { 
+          //         vi: village_2,
+          //         l_n : landmark_2,
+          //         l_t : landmark_2_type,
+          //         l_lat : coordinates[nodes-1][0],
+          //         l_long : coordinates[nodes-1][1]
+          //     }
+          // );
+          // await session.run(
+          //     'MATCH (l1:Landmark), (l2:Landmark) WHERE l1.name = $l_1 AND l2.name = $l_2 AND l1.village = $v_1 AND l2.village = $v_2 MERGE (l1)-[r:connected {route_coordinates: $route_coor, straight_line_distance: $straight_dist, nodes: $nodes}]->(l2)',
+          //     { 
+          //         l_1 : landmark_1,
+          //         l_2 : landmark_2,
+          //         v_1 : village_1,
+          //         v_2 : village_2,
+          //         nodes : nodes,
+          //         route_coor : route_string,
+          //         straight_dist : straight_line_distance,
+          //     }
+          // );
+          // res.status(201).send("route stored successfully");
+
+        case 22:
+        case "end":
+          return _context4.stop();
       }
     }
   });
