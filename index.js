@@ -3,7 +3,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const {Client} = require('pg');
 const neo4j = require('neo4j-driver');
-const driver = neo4j.driver('bolt://2.tcp.ngrok.io:12565', neo4j.auth.basic('neo4j', '12345678'));
+const driver = neo4j.driver('bolt://4.tcp.ngrok.io:18603', neo4j.auth.basic('neo4j', '12345678')
+);
 
 const session = driver.session();
 console.log('Neo4j connected');
@@ -21,11 +22,12 @@ app.use((req, res, next) => {
 
 
 const client = new Client({
-    user:'postgres',
-    host:'localhost',
-    database:'MapifyDb',
-    password: 'Vjti@1234',
+    user:'sqxjeczjouzsvi',
+    host:'ec2-54-228-250-82.eu-west-1.compute.amazonaws.com',
+    database:'d5fq2297lv7h5a',
+    password: '19e7d820cf0070214dcc0dff6f0071cb1ba1803674984aa5712631174fe18de8',
     port:5432,
+    ssl:{ rejectUnauthorized: false }
 });
 client.connect();
 
@@ -126,7 +128,7 @@ client.query(select_query,[name],(err, result) => {
 
 app.get('/getAllLandmark', async(req,res)=>{
   
-  const select_query = "SELECT row_to_json(fc) AS data FROM (SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features FROM (SELECT 'Feature' As type, row_to_json((id, landmark_name)) As properties ,ST_AsGeoJSON(lg.geom)::json As geometry FROM landmark As lg ) As f ) As fc" ; 
+  const select_query = "SELECT row_to_json(fc) AS data FROM (SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features FROM (SELECT 'Feature' As type, row_to_json((id,landmark_name,'false')) As properties,ST_AsGeoJSON(lg.geom)::json As geometry FROM landmark As lg ) As f ) As fc" ; 
   client.query(select_query,[],(err, result) => {
     if (err) {
         console.error(err);
@@ -179,7 +181,8 @@ app.post('/add_landmark', async (req,res) => {
   console.log(l_name);
   console.log(l_latitude);
   const check_landmark_exists = await session.run(
-      "MATCH (l:Landmark {name: $l_n, village: $vi, type: $l_t}) RETURN CASE WHEN l IS NOT NULL THEN true ELSE false END",
+     "MATCH (l:Landmark {name: $l_n, village: $vi, type: $l_t}) RETURN CASE WHEN l IS NOT NULL THEN true ELSE false END",
+    // 'CREATE(p:Person{name:"Owais"}) '
       { 
           l_n : l_name,
           l_t : l_type,
@@ -187,10 +190,11 @@ app.post('/add_landmark', async (req,res) => {
       }
   );
 
-  if (check_landmark_exists.records[0] === undefined){
+   if (check_landmark_exists.records[0] === undefined){
 
       await session.run(
           "MATCH (v:Village {name: $vi }) MERGE (l:Landmark {name: $l_n,type: $l_t,village :$vi,latitude: $l_lat,longitude: $l_long}) MERGE (l) - [r:Located_in] -> (v)",
+        //   'CREATE(p:Person{name:"Owais"}) '
           { 
               vi: village,
               l_n : l_name,

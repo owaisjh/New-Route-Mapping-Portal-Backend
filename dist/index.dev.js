@@ -11,7 +11,7 @@ var _require = require('pg'),
 
 var neo4j = require('neo4j-driver');
 
-var driver = neo4j.driver('bolt://2.tcp.ngrok.io:12565', neo4j.auth.basic('neo4j', '12345678'));
+var driver = neo4j.driver('bolt://4.tcp.ngrok.io:18603', neo4j.auth.basic('neo4j', '12345678'));
 var session = driver.session();
 console.log('Neo4j connected');
 var app = express();
@@ -27,11 +27,14 @@ app.use(function (req, res, next) {
   next();
 });
 var client = new Client({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'MapifyDb',
-  password: 'Vjti@1234',
-  port: 5432
+  user: 'sqxjeczjouzsvi',
+  host: 'ec2-54-228-250-82.eu-west-1.compute.amazonaws.com',
+  database: 'd5fq2297lv7h5a',
+  password: '19e7d820cf0070214dcc0dff6f0071cb1ba1803674984aa5712631174fe18de8',
+  port: 5432,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 client.connect();
 app.get('/', function (req, res) {
@@ -154,7 +157,7 @@ app.get('/getAllLandmark', function _callee4(req, res) {
     while (1) {
       switch (_context4.prev = _context4.next) {
         case 0:
-          select_query = "SELECT row_to_json(fc) AS data FROM (SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features FROM (SELECT 'Feature' As type, row_to_json((id, landmark_name)) As properties ,ST_AsGeoJSON(lg.geom)::json As geometry FROM landmark As lg ) As f ) As fc";
+          select_query = "SELECT row_to_json(fc) AS data FROM (SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features FROM (SELECT 'Feature' As type, row_to_json((id,landmark_name,'false')) As properties,ST_AsGeoJSON(lg.geom)::json As geometry FROM landmark As lg ) As f ) As fc";
           client.query(select_query, [], function (err, result) {
             if (err) {
               console.error(err);
@@ -218,7 +221,8 @@ app.post('/add_landmark', function _callee6(req, res) {
           console.log(l_name);
           console.log(l_latitude);
           _context6.next = 10;
-          return regeneratorRuntime.awrap(session.run("MATCH (l:Landmark {name: $l_n, village: $vi, type: $l_t}) RETURN CASE WHEN l IS NOT NULL THEN true ELSE false END", {
+          return regeneratorRuntime.awrap(session.run("MATCH (l:Landmark {name: $l_n, village: $vi, type: $l_t}) RETURN CASE WHEN l IS NOT NULL THEN true ELSE false END", // 'CREATE(p:Person{name:"Owais"}) '
+          {
             l_n: l_name,
             l_t: l_type,
             vi: village
@@ -233,7 +237,8 @@ app.post('/add_landmark', function _callee6(req, res) {
           }
 
           _context6.next = 14;
-          return regeneratorRuntime.awrap(session.run("MATCH (v:Village {name: $vi }) MERGE (l:Landmark {name: $l_n,type: $l_t,village :$vi,latitude: $l_lat,longitude: $l_long}) MERGE (l) - [r:Located_in] -> (v)", {
+          return regeneratorRuntime.awrap(session.run("MATCH (v:Village {name: $vi }) MERGE (l:Landmark {name: $l_n,type: $l_t,village :$vi,latitude: $l_lat,longitude: $l_long}) MERGE (l) - [r:Located_in] -> (v)", //   'CREATE(p:Person{name:"Owais"}) '
+          {
             vi: village,
             l_n: l_name,
             l_t: l_type,
