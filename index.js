@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const {Client} = require('pg');
 const neo4j = require('neo4j-driver');
-const driver = neo4j.driver('tcp://0.tcp.ngrok.io:12316', neo4j.auth.basic('neo4j', '12345678')
+const driver = neo4j.driver('bolt://0.tcp.ngrok.io:12316', neo4j.auth.basic('neo4j', '12345678')
 );
 
 const session = driver.session();
